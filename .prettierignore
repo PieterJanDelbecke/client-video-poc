@@ -1,0 +1,10 @@
+package-lock.json
+yarn.lock
+
+server/migrations
+
+client/build
+client/dist
+
+admin/public
+admin/.next
