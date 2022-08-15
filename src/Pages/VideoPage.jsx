@@ -3,8 +3,9 @@ import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
 import styled from "styled-components";
 import { Oval } from "react-loader-spinner";
 import Cropper from "react-easy-crop";
-import { useNavigate } from "react-router-dom"
+import { useNavigate } from "react-router-dom";
 import { useContext } from "react";
+import { saveAs } from "file-saver";
 
 import Context from "../context/Context";
 
@@ -15,7 +16,7 @@ const Container = styled.div`
 `;
 
 const H1 = styled.h1`
-    margin: 10px;
+	margin: 10px;
 	color: Blue;
 `;
 const Img = styled.img`
@@ -25,14 +26,14 @@ const Button = styled.button`
 	display: block;
 	margin: 10px;
 	width: 200px;
-    height: 35px;
-    border-radius: 5px;
-    border: 2px solid black;
+	height: 35px;
+	border-radius: 5px;
+	border: 2px solid black;
 `;
 
 const Input = styled.input`
-    margin: 10px;
-`
+	margin: 10px;
+`;
 
 const Video = styled.video`
 	// height: 50vh;
@@ -46,8 +47,8 @@ const CropperDiv = styled.div`
 `;
 
 function VideoPage() {
-    const navigate = useNavigate()
-    const { context, setContext } = useContext(Context)
+	const navigate = useNavigate();
+	const { context, setContext } = useContext(Context);
 
 	const [crop, setCrop] = useState({ x: 0, y: 0 });
 	const [zoom, setZoom] = useState(1);
@@ -73,13 +74,13 @@ function VideoPage() {
 	const handleFileSelected = async (e) => {
 		e.preventDefault();
 		setCropBtnDisabled(false);
-        setTranscodeBtnDisabled(false)
+		setTranscodeBtnDisabled(false);
 		const url = URL.createObjectURL(e.target.files[0]);
 		setSelectedFileUrl(url);
-        setContext({
-            ...context,
-            fileUrl: url
-        })
+		setContext({
+			...context,
+			fileUrl: url,
+		});
 		await ffmpeg.load();
 		ffmpeg.FS("writeFile", "test.mov", await fetchFile(url));
 		await ffmpeg.run("-i", "test.mov", "-ss", "00:00:01.000", "-vframes", "1", "preview.png");
@@ -87,10 +88,9 @@ function VideoPage() {
 		const data = ffmpeg.FS("readFile", "preview.png");
 		setPreviewSrc(URL.createObjectURL(new Blob([data.buffer], { type: "png" })));
 		setContext({
-            ...context,
-            previewUrl: URL.createObjectURL(new Blob([data.buffer], { type: "png" }))
-        }
-        )
+			...context,
+			previewUrl: URL.createObjectURL(new Blob([data.buffer], { type: "png" })),
+		});
 	};
 
 	const handleTranscode = async () => {
@@ -110,8 +110,8 @@ function VideoPage() {
 	};
 
 	const handleCrop = async () => {
-        setStartCropBtnDisabled(true)
-        setShowCrop(false)
+		setStartCropBtnDisabled(true);
+		setShowCrop(false);
 		setMessage("Loading ffmpeg-core.js");
 		await ffmpeg.load();
 		setMessage("Start Crop");
@@ -125,16 +125,15 @@ function VideoPage() {
 		setShowVideo(true);
 		const data = ffmpeg.FS("readFile", "test.mp4");
 		setVideoSrc(URL.createObjectURL(new Blob([data.buffer], { type: "video/mp4" })));
-
 	};
 
-    const handleShowCrop = () => {
-        setShowPreview(false)
-        setShowCrop(true)
-        setStartCropBtnDisabled(false)
-        setCropBtnDisabled(true)
-        setTranscodeBtnDisabled(true)
-    }
+	const handleShowCrop = () => {
+		setShowPreview(false);
+		setShowCrop(true);
+		setStartCropBtnDisabled(false);
+		setCropBtnDisabled(true);
+		setTranscodeBtnDisabled(true);
+	};
 
 	const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
 		console.log(croppedArea, croppedAreaPixels);
@@ -143,6 +142,10 @@ function VideoPage() {
 	}, []);
 
 	console.log("X:", measurements.x, " Y:", measurements.y);
+
+	const handleDownload = () => {
+		saveAs(videoSrc);
+	};
 
 	return (
 		<Container>
@@ -176,7 +179,8 @@ function VideoPage() {
 					/>
 				</CropperDiv>
 			)}
-			{showVideo && <Video src={videoSrc} controls></Video>}
+			{showVideo && <Video src={videoSrc} controls height={600} width={600}></Video>}
+			<Button onClick={handleDownload}>Download</Button>
 		</Container>
 	);
 }
