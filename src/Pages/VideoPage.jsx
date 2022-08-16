@@ -47,23 +47,26 @@ const CropperDiv = styled.div`
 `;
 
 function VideoPage() {
-	const navigate = useNavigate();
-	const { context, setContext } = useContext(Context);
+	// const navigate = useNavigate();
+	// const { context, setContext } = useContext(Context);
 
 	const [crop, setCrop] = useState({ x: 0, y: 0 });
 	const [zoom, setZoom] = useState(1);
 
-	const [videoSrc, setVideoSrc] = useState("");
-	const [previewSrc, setPreviewSrc] = useState("");
-	const [message, setMessage] = useState("Click Start to transcode");
 	const [showVideo, setShowVideo] = useState(false);
 	const [showPreview, setShowPreview] = useState(false);
 	const [showCrop, setShowCrop] = useState(false);
 	const [showSpinner, setShowSpinner] = useState(false);
+
+	const [videoSrc, setVideoSrc] = useState("");
+	const [previewSrc, setPreviewSrc] = useState("");
+	const [message, setMessage] = useState("Click Start to transcode");
 	const [measurements, setMeasurements] = useState({});
+
 	const [cropBtnDisabled, setCropBtnDisabled] = useState(true);
 	const [startCropBtnDisabled, setStartCropBtnDisabled] = useState(true);
 	const [transcodeBtnDisabled, setTranscodeBtnDisabled] = useState(true);
+	const [downloadBtnDisabled, setDownloadBtnDisabled] = useState(true)
 
 	const ffmpeg = createFFmpeg({
 		log: true,
@@ -73,24 +76,17 @@ function VideoPage() {
 
 	const handleFileSelected = async (e) => {
 		e.preventDefault();
-		setCropBtnDisabled(false);
-		setTranscodeBtnDisabled(false);
+		setDownloadBtnDisabled(true)
 		const url = URL.createObjectURL(e.target.files[0]);
 		setSelectedFileUrl(url);
-		setContext({
-			...context,
-			fileUrl: url,
-		});
 		await ffmpeg.load();
 		ffmpeg.FS("writeFile", "test.mov", await fetchFile(url));
-		await ffmpeg.run("-i", "test.mov", "-ss", "00:00:01.000", "-vframes", "1", "preview.png");
+		await ffmpeg.run("-i", "test.mov", "-ss", "00:00:01.000", "-vframes", "1", "preview.png"); // take screenshot
 		setShowPreview(true);
 		const data = ffmpeg.FS("readFile", "preview.png");
 		setPreviewSrc(URL.createObjectURL(new Blob([data.buffer], { type: "png" })));
-		setContext({
-			...context,
-			previewUrl: URL.createObjectURL(new Blob([data.buffer], { type: "png" })),
-		});
+		setCropBtnDisabled(false);
+		setTranscodeBtnDisabled(false);
 	};
 
 	const handleTranscode = async () => {
@@ -107,6 +103,7 @@ function VideoPage() {
 		setShowVideo(true);
 		const data = ffmpeg.FS("readFile", "test.mp4");
 		setVideoSrc(URL.createObjectURL(new Blob([data.buffer], { type: "video/mp4" })));
+		setDownloadBtnDisabled(false)
 	};
 
 	const handleCrop = async () => {
@@ -118,13 +115,14 @@ function VideoPage() {
 		setShowSpinner(true);
 		ffmpeg.FS("writeFile", "test.mov", await fetchFile(selectedFileUrl));
 		setMessage("Cropping...");
-		await ffmpeg.run("-i", "test.mov", "-filter:v", `crop=1080:1080:${measurements.x}:${measurements.y}`, "test.mp4");
+		await ffmpeg.run("-i", "test.mov", "-filter:v", `crop=1080:1080:${measurements.x}:${measurements.y}`, "test.mp4"); // crop
 		setShowSpinner(false);
 		setMessage("Crop Complete");
 		setShowPreview(false);
 		setShowVideo(true);
 		const data = ffmpeg.FS("readFile", "test.mp4");
 		setVideoSrc(URL.createObjectURL(new Blob([data.buffer], { type: "video/mp4" })));
+		setDownloadBtnDisabled(false)
 	};
 
 		const handleColors = async () => {
@@ -137,7 +135,7 @@ function VideoPage() {
 		ffmpeg.FS("writeFile", "test.mov", await fetchFile(selectedFileUrl));
 		setMessage("Colouring...");
 		// await ffmpeg.run("-i", "test.mov", "-vf", "colorbalance=gs=.5:bh=1:rh=1", "-pix_fmt", "yuv420p", "test.mp4");
-		await ffmpeg.run("-i", "test.mov", "-vf", "colorbalance=-0.4:-0.2:0.2:-0.4:-0.2:0.2:0:0:0.0", "-pix_fmt", "yuv420p", "test.mp4");
+		await ffmpeg.run("-i", "test.mov", "-vf", "colorbalance=-0.4:-0.2:0.2:-0.4:-0.2:0.2:0:0:0.0", "-pix_fmt", "yuv420p", "test.mp4"); // use colour filter
 		setShowSpinner(false);
 		setMessage("Colour Complete");
 		setShowPreview(false);
@@ -182,16 +180,16 @@ function VideoPage() {
 			<Button onClick={handleTranscode} disabled={transcodeBtnDisabled}>
 				Transcode
 			</Button>
-			<Button onClick={handleColors}>
+			<Button onClick={handleColors} disabled={true}>
 				Colours
 			</Button>
 			<p>{message}</p>
 			{showSpinner && <Oval color="#00BFFF" height={40} width={40} />}
-			{showPreview && <Img src={context.previewUrl} alt="preview" />}
+			{showPreview && <Img src={previewSrc} alt="preview"/>}
 			{showCrop && (
 				<CropperDiv>
 					<Cropper
-						image={context.previewUrl}
+						image={previewSrc}
 						crop={crop}
 						zoom={zoom}
 						aspect={1 / 1}
@@ -202,7 +200,7 @@ function VideoPage() {
 				</CropperDiv>
 			)}
 			{showVideo && <Video src={videoSrc} controls height={600} width={600}></Video>}
-			<Button onClick={handleDownload}>Download</Button>
+			<Button onClick={handleDownload} disabled={downloadBtnDisabled}>Download</Button>
 		</Container>
 	);
 }
