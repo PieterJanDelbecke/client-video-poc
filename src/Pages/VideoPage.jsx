@@ -3,11 +3,11 @@ import { createFFmpeg, fetchFile } from "@ffmpeg/ffmpeg";
 import styled from "styled-components";
 import { Oval } from "react-loader-spinner";
 import Cropper from "react-easy-crop";
-import { useNavigate } from "react-router-dom";
-import { useContext } from "react";
 import { saveAs } from "file-saver";
+// import { useNavigate } from "react-router-dom";
+// import { useContext } from "react";
 
-import Context from "../context/Context";
+// import Context from "../context/Context";
 
 const Container = styled.div`
 	width: 80%;
