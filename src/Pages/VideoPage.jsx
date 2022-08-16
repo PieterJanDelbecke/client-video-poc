@@ -127,6 +127,25 @@ function VideoPage() {
 		setVideoSrc(URL.createObjectURL(new Blob([data.buffer], { type: "video/mp4" })));
 	};
 
+		const handleColors = async () => {
+		// setStartCropBtnDisabled(true);
+		// setShowCrop(false);
+		setMessage("Loading ffmpeg-core.js");
+		await ffmpeg.load();
+		setMessage("Start Coulouring");
+		setShowSpinner(true);
+		ffmpeg.FS("writeFile", "test.mov", await fetchFile(selectedFileUrl));
+		setMessage("Colouring...");
+		// await ffmpeg.run("-i", "test.mov", "-vf", "colorbalance=gs=.5:bh=1:rh=1", "-pix_fmt", "yuv420p", "test.mp4");
+		await ffmpeg.run("-i", "test.mov", "-vf", "colorbalance=-0.4:-0.2:0.2:-0.4:-0.2:0.2:0:0:0.0", "-pix_fmt", "yuv420p", "test.mp4");
+		setShowSpinner(false);
+		setMessage("Colour Complete");
+		setShowPreview(false);
+		setShowVideo(true);
+		const data = ffmpeg.FS("readFile", "test.mp4");
+		setVideoSrc(URL.createObjectURL(new Blob([data.buffer], { type: "video/mp4" })));
+	} 
+
 	const handleShowCrop = () => {
 		setShowPreview(false);
 		setShowCrop(true);
@@ -162,6 +181,9 @@ function VideoPage() {
 			</Button>
 			<Button onClick={handleTranscode} disabled={transcodeBtnDisabled}>
 				Transcode
+			</Button>
+			<Button onClick={handleColors}>
+				Colours
 			</Button>
 			<p>{message}</p>
 			{showSpinner && <Oval color="#00BFFF" height={40} width={40} />}
